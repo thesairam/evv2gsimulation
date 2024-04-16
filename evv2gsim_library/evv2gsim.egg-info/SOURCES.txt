@@ -1,0 +1,7 @@
+setup.py
+evv2gsim/__init__.py
+evv2gsim/myfunctions.py
+evv2gsim.egg-info/PKG-INFO
+evv2gsim.egg-info/SOURCES.txt
+evv2gsim.egg-info/dependency_links.txt
+evv2gsim.egg-info/top_level.txt
