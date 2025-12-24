@@ -1,0 +1,12 @@
+{
+  "api_token": "6e6716df-b6d7-4989-9112-e1e157510423",
+  "countries": ["DE_LU", "NL", "FR"],
+  "metric": "price_eur_mwh",
+  "start_date": null,
+  "end_date": null,
+  "years_back": 1,
+  "resample": null,
+  "cache_csv": "entsoe_day_ahead_prices.csv",
+  "plot_png": "entsoe_day_ahead_prices.png",
+  "timezone": "Europe/Brussels"
+}
