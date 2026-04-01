@@ -1,0 +1,484 @@
+# ⚡ CLAUDE PROJECT SPEC — Energy Forecasting + LLM Analytics (15-Min Data)
+
+---
+
+## 🎯 Goal
+
+Build a modular, realistic energy forecasting pipeline that predicts:
+
+> **Net Power Output (kW) = Solar + Wind − Curtailment**
+
+The system must:
+
+* Use **15-minute interval data**
+* Support both **synthetic (generated)** and **API-based data**
+* Be **clean, modular, and easily extendable**
+* Use **XGBoost** for prediction
+* Include **visualization + evaluation metrics**
+* Include an **LLM layer for analysis, insights, and Q&A**
+
+---
+
+## 🧠 System Overview
+
+```
+Data Source (Generated / API)
+        ↓
+Feature Engineering
+        ↓
+XGBoost Model
+        ↓
+Predictions + Metrics
+        ↓
+🧠 LLM Analytics Layer
+        ↓
+Insights + Q&A + Recommendations
+```
+
+---
+
+## 🧱 1. Data Sources
+
+### Mode 1: Generated Data (default)
+
+Create realistic profiles (**NOT random noise**):
+
+* Solar generation
+* Wind generation
+* Demand
+* Curtailment
+* Market price (15-min resolution)
+* Weather:
+
+  * Temperature
+  * Cloud cover
+  * Precipitation probability
+
+---
+
+### Mode 2: API Data (future-ready)
+
+Add:
+
+```python
+def load_api_data():
+    pass
+```
+
+Must return:
+
+```
+datetime index (15-min)
+solar_kw
+wind_kw
+demand_kw
+curtailment_kw
+price_eur_mwh
+temperature_c
+cloud_cover
+precip_prob
+```
+
+---
+
+## ⏱️ Time Setup
+
+* Frequency: `15T`
+* 96 points per day
+* Default dataset: **14–30 days**
+
+---
+
+## ⚙️ Data Generation Logic
+
+### ☀️ Solar
+
+* Based on solar elevation (day/night cycle)
+* Reduced using cloud cover
+* Add small noise
+
+---
+
+### 🌬️ Wind
+
+* Diurnal + stochastic variation
+* Power curve:
+
+  * No output < cut-in speed
+  * Cubic growth until rated
+  * Flat after rated
+
+---
+
+### ⚡ Demand
+
+* Evening peak
+* Weekday vs weekend variation
+
+---
+
+### 💰 Market Price
+
+* Higher in evening
+* Add volatility
+* Slight dependency on demand
+
+---
+
+### 🚫 Curtailment
+
+```
+if generation > demand:
+    curtailment = fraction of surplus
+```
+
+Optional:
+
+* Apply max grid capacity constraint
+
+---
+
+### 🌦️ Weather
+
+* Temperature: sinusoidal + noise
+* Cloud cover: beta distribution
+* Precipitation: correlated with cloud
+
+---
+
+## 🧮 Feature Engineering
+
+### Time Features
+
+* Hour
+* Day of week
+
+---
+
+### Lag Features (CRITICAL)
+
+```
+[1, 2, 4, 96]
+```
+
+Meaning:
+
+* 15 min
+* 30 min
+* 1 hour
+* 24 hours
+
+Apply to:
+
+* generation (mandatory)
+* solar (optional)
+* wind (optional)
+
+---
+
+### Rolling Features
+
+* 1-hour mean (4 steps)
+* 6-hour mean (24 steps)
+
+---
+
+### Additional
+
+* price lag (1)
+
+---
+
+## 🎯 Target
+
+```
+generation_kw = solar_kw + wind_kw - curtailment_kw
+```
+
+---
+
+## 🤖 Model
+
+Use:
+
+```python
+xgboost.XGBRegressor
+```
+
+Parameters:
+
+```python
+{
+    "n_estimators": 200,
+    "learning_rate": 0.1,
+    "max_depth": 6,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8
+}
+```
+
+---
+
+## 🔀 Train/Test Split
+
+* Time-based (NO shuffle)
+* Last 20% = test set
+
+---
+
+## 📊 Metrics
+
+Compute:
+
+* RMSE
+* MAE
+* MAPE
+* R²
+
+---
+
+## 📈 Visualizations
+
+Must include:
+
+### 1. Generated Profiles (sample day)
+
+* Solar
+* Wind
+* Net generation
+* Demand
+
+### 2. Market Price Plot
+
+### 3. Prediction vs Actual
+
+* First 24h of test
+
+### 4. Residual Distribution
+
+### 5. Feature Importance (XGBoost)
+
+---
+
+## 🧠 10. LLM Analytics Layer
+
+### 🎯 Purpose
+
+Enhance the ML pipeline with an LLM that:
+
+* Interprets results
+* Explains performance
+* Detects issues
+* Suggests improvements
+* Answers user questions
+
+---
+
+### 📥 LLM Input (Structured)
+
+#### Metrics
+
+```json
+{
+  "rmse": 120.5,
+  "mae": 95.2,
+  "mape": 8.3,
+  "r2": 0.91
+}
+```
+
+#### Feature Importance
+
+```json
+[
+  {"feature": "gen_lag_1", "importance": 0.32},
+  {"feature": "solar_kw", "importance": 0.21}
+]
+```
+
+#### Predictions
+
+* Last 24h actual vs predicted
+
+#### Metadata
+
+```json
+{
+  "resolution": "15min",
+  "dataset_days": 14,
+  "model": "XGBoost"
+}
+```
+
+---
+
+### ⚙️ Required LLM Functions
+
+```python
+prepare_llm_input()
+analyze_results()
+ask_llm()
+```
+
+---
+
+### 🤖 LLM Responsibilities
+
+#### 1. Performance Summary
+
+* Explain metrics in human terms
+
+#### 2. Diagnostics
+
+* Detect:
+
+  * Peak-hour errors
+  * Bias (under/over prediction)
+  * Weak features
+
+#### 3. Recommendations
+
+* Feature improvements
+* Data improvements
+* Model tuning ideas
+
+#### 4. Q&A Interface
+
+User can ask:
+
+* “Why is error high at night?”
+* “Which feature matters most?”
+* “How to improve accuracy?”
+
+---
+
+### 🔌 LLM Integration Example
+
+```python
+from openai import OpenAI
+
+client = OpenAI()
+
+def analyze_results(llm_input):
+    prompt = f"""
+    You are an energy analytics expert.
+
+    Analyze:
+    {llm_input}
+
+    Provide:
+    - Summary
+    - Issues
+    - Improvements
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-5",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    return response.choices[0].message.content
+```
+
+---
+
+## 🔁 Execution Flow
+
+```
+Select data source (generated / api)
+        ↓
+Load or generate data
+        ↓
+Create features
+        ↓
+Train model
+        ↓
+Predict
+        ↓
+Evaluate
+        ↓
+Plot results
+        ↓
+Prepare LLM input
+        ↓
+LLM analysis + Q&A
+        ↓
+Save outputs
+```
+
+---
+
+## 💾 Outputs
+
+Save:
+
+* `generated_energy_dataset.csv`
+* `xgb_energy_model.joblib`
+* `llm_analysis.txt` (optional)
+
+---
+
+## 🧩 Code Structure
+
+```python
+generate_datetime_index()
+generate_solar_profile()
+generate_wind_profile()
+generate_weather()
+generate_market_price()
+generate_demand()
+generate_curtailment()
+
+load_api_data()
+
+create_features()
+train_model()
+evaluate_model()
+plot_results()
+
+prepare_llm_input()
+analyze_results()
+ask_llm()
+```
+
+---
+
+## 🧠 Design Principles
+
+* Avoid unrealistic randomness
+* Mimic real physical behavior
+* Keep everything modular
+* Easy to swap generated → API data
+* Clean and readable code
+
+---
+
+## 🚀 Future Extensions
+
+* Multi-step forecasting (t+1, t+4, t+96)
+* API integration:
+
+  * ENTSO-E (prices)
+  * Open-Meteo (weather)
+* Optimization layer (revenue, curtailment)
+* Deployment (REST API)
+* Dashboard (real-time monitoring)
+
+---
+
+## ✅ Final Instruction for Claude
+
+> Build the full pipeline as a clean Python project (not messy notebook) using the above specifications.
+> Dockerize so it is easy to launch without installing any dependencies 
+
+Ensure:
+
+* Modular structure
+* Realistic data (not random)
+* Clean feature engineering
+* Strong visualizations
+* XGBoost model training
+* Integrated LLM analytics + Q&A
+* Easy API extensibility
+
+---

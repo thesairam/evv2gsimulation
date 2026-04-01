@@ -1,0 +1,28 @@
+============================================================
+ENERGY FORECASTING — PERFORMANCE ANALYSIS (offline)
+============================================================
+
+## Performance Summary
+  RMSE: 2.49 kW | MAE: 1.3 kW
+  MAPE: 7.68% | R²: 0.9973
+
+  → Excellent fit. Suitable for operational use.
+
+## Diagnostics
+  Bias: balanced (mean error: -0.07 kW)
+  Error std: 2.49 kW
+  Completed predictions: 256
+
+## Top Features
+  shortwave_radiation_wm2: 0.5856
+  gen_rolling_1h: 0.3155
+  gen_lag_1: 0.0507
+  solar_lag_1: 0.0224
+  gen_lag_96: 0.0092
+
+## Recommendations
+  - Monitor model drift as weather patterns change
+  - Consider adding more lag features (48h, 7-day)
+  - Evaluate if retraining frequency is optimal
+  - Watch for seasonal transitions affecting accuracy
+============================================================

@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+output/
+*.joblib
+*.csv
+.env
+.venv/
+venv/
+.git/
+.gitignore
+evapps/
+PredictionModels/
+README.md
+claude.md
+*.egg-info/
